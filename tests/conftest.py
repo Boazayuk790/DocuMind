@@ -25,3 +25,11 @@ def user_id():
 def auth_headers(user_id):
     from app.auth import create_token
     return {"Authorization": f"Bearer {create_token(user_id)}"}
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limits():
+    from app import rate_limit
+    rate_limit.reset()
+    yield
+    rate_limit.reset()

@@ -9,6 +9,7 @@ from app.services.document_reader import extract_text
 from app.services.llm_service import analyze_document, answer_question, compare_documents
 from app.schemas import DocumentAnalysis, DocumentComparison
 from app.auth import create_token, get_current_user
+from app.rate_limit import rate_limit
 from app.database import (
     initialize_database,
     save_analysis,
@@ -235,7 +236,10 @@ class Credentials(BaseModel):
 
 
 @app.post("/register")
-def register(credentials: Credentials):
+def register(
+    credentials: Credentials,
+    _: None = Depends(rate_limit("register", 5, 60))
+):
     user_id = register_user(credentials.username, credentials.password)
 
     if user_id is None:
@@ -248,7 +252,10 @@ def register(credentials: Credentials):
 
 
 @app.post("/login")
-def login(credentials: Credentials):
+def login(
+    credentials: Credentials,
+    _: None = Depends(rate_limit("login", 5, 60))
+):
     user_id = verify_user(credentials.username, credentials.password)
 
     if user_id is None:
