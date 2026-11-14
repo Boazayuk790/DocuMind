@@ -50,3 +50,17 @@ def test_short_password_rejected():
 
 def test_tampered_token_rejected():
     assert verify_token("not-a-real-token") is None
+
+
+def test_me_returns_username(auth_headers):
+    client = TestClient(app)
+    response = client.get("/me", headers=auth_headers)
+
+    assert response.status_code == 200
+    assert response.json() == {"username": "tester"}
+
+
+def test_me_requires_token():
+    client = TestClient(app)
+
+    assert client.get("/me").status_code == 401

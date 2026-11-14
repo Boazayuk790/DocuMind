@@ -18,6 +18,7 @@ from app.database import (
     get_document_text,
     register_user,
     verify_user,
+    get_username,
 )
 
 
@@ -257,3 +258,16 @@ def login(credentials: Credentials):
         )
 
     return {"token": create_token(user_id)}
+
+
+@app.get("/me")
+def me(user_id: int = Depends(get_current_user)):
+    username = get_username(user_id)
+
+    if username is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Account no longer exists."
+        )
+
+    return {"username": username}

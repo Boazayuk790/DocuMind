@@ -181,3 +181,12 @@ def verify_user(username, password):
         return row[0]
 
     return None
+
+
+def get_username(user_id):
+    with sqlite3.connect(DATABASE_PATH) as connection:
+        row = connection.execute(
+            "SELECT username FROM users WHERE id = ?", (user_id,)
+        ).fetchone()
+
+    return row[0] if row else None
