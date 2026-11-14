@@ -8,7 +8,8 @@ from pydantic import BaseModel, Field
 from app.services.document_reader import extract_text
 from app.services.llm_service import analyze_document, answer_question, compare_documents
 from app.schemas import DocumentAnalysis, DocumentComparison
-from app.database import initialize_database, save_analysis, get_analysis_history, get_analysis_by_id, delete_analysis, get_document_text
+from app.auth import create_token
+from app.database import initialize_database, save_analysis, get_analysis_history, get_analysis_by_id, delete_analysis, get_document_text, register_user, verify_user
 
 
 @asynccontextmanager
@@ -206,3 +207,34 @@ async def compare_uploaded_documents(
             status_code=500,
             detail="Document comparison failed. Please try again."
         )
+
+
+class Credentials(BaseModel):
+    username: str = Field(min_length=3, max_length=50)
+    password: str = Field(min_length=8, max_length=128)
+
+
+@app.post("/register")
+def register(credentials: Credentials):
+    user_id = register_user(credentials.username, credentials.password)
+
+    if user_id is None:
+        raise HTTPException(
+            status_code=409,
+            detail="Username is already taken."
+        )
+
+    return {"token": create_token(user_id)}
+
+
+@app.post("/login")
+def login(credentials: Credentials):
+    user_id = verify_user(credentials.username, credentials.password)
+
+    if user_id is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid username or password."
+        )
+
+    return {"token": create_token(user_id)}
