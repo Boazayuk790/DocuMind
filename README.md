@@ -1,4 +1,4 @@
-# DocuMind
+﻿# DocuMind
 
 AI-powered document intelligence. Upload a PDF, DOCX or TXT file and DocuMind uses Google Gemini to turn it into a structured analysis: document type, summary, key information, important dates, amounts, missing information and inconsistencies. You can then chat with the document, compare two documents, and export reports.
 
@@ -32,7 +32,7 @@ AI-powered document intelligence. Upload a PDF, DOCX or TXT file and DocuMind us
 
 ## Tech stack
 
-- Backend: FastAPI, Pydantic, SQLite
+- Backend: FastAPI, Pydantic, PostgreSQL (Neon), SQLite fallback for local use and tests
 - Frontend: Streamlit
 - AI: Google Gemini via the google-genai SDK
 - Auth: scrypt password hashing, signed tokens (itsdangerous)
@@ -46,7 +46,7 @@ AI-powered document intelligence. Upload a PDF, DOCX or TXT file and DocuMind us
     FastAPI backend (app/main.py)
         |-- auth.py              token creation and verification
         |-- rate_limit.py        login/register rate limiting
-        |-- database.py          SQLite: users, document_analyses
+        |-- database.py          PostgreSQL/SQLite: users, document_analyses
         |-- services/
               |-- document_reader.py   content validation and text extraction
               |-- llm_service.py       Gemini analysis, chat, comparison
@@ -113,6 +113,4 @@ The frontend opens at http://localhost:8501 and the API docs are at http://127.0
 
 ## Roadmap
 
-- Migrate from SQLite to PostgreSQL
-- Deploy backend and frontend with HTTPS
 - Token revocation and rate limits on the AI endpoints
