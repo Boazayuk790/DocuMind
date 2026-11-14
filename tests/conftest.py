@@ -8,6 +8,7 @@ def temporary_database(tmp_path, monkeypatch):
     monkeypatch.setattr(
         database, "DATABASE_PATH", tmp_path / "test_documind.db"
     )
+    monkeypatch.delenv("DATABASE_URL", raising=False)
     database.initialize_database()
 
 
