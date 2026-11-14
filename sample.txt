@@ -1,0 +1,1 @@
+DocuMind is a document intelligence system. It extracts and analyses document content.
