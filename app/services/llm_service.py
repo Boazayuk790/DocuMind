@@ -8,11 +8,16 @@ from app.schemas import DocumentAnalysis, DocumentComparison
 load_dotenv()
 
 
+class AIServiceError(Exception):
+    """Internal AI service failure. Never shown to users."""
+
+
+
 def analyze_document(document_text: str) -> DocumentAnalysis:
     api_key = os.getenv("GEMINI_API_KEY")
 
     if not api_key:
-        raise ValueError("GEMINI_API_KEY is missing.")
+        raise AIServiceError("GEMINI_API_KEY is missing.")
 
     client = genai.Client(
         api_key=api_key,
@@ -49,7 +54,7 @@ def analyze_document(document_text: str) -> DocumentAnalysis:
         )
 
         if not response.text:
-            raise ValueError("Gemini returned an empty response.")
+            raise AIServiceError("Gemini returned an empty response.")
 
         return DocumentAnalysis.model_validate_json(response.text)
 
@@ -60,7 +65,7 @@ def answer_question(document_text: str, question: str) -> str:
     api_key = os.getenv("GEMINI_API_KEY")
 
     if not api_key:
-        raise ValueError("GEMINI_API_KEY is missing.")
+        raise AIServiceError("GEMINI_API_KEY is missing.")
 
     client = genai.Client(
         api_key=api_key,
@@ -94,7 +99,7 @@ def answer_question(document_text: str, question: str) -> str:
         )
 
         if not response.text:
-            raise ValueError("Gemini returned an empty response.")
+            raise AIServiceError("Gemini returned an empty response.")
 
         return response.text.strip()
 
@@ -106,7 +111,7 @@ def compare_documents(text_a: str, text_b: str) -> DocumentComparison:
     api_key = os.getenv("GEMINI_API_KEY")
 
     if not api_key:
-        raise ValueError("GEMINI_API_KEY is missing.")
+        raise AIServiceError("GEMINI_API_KEY is missing.")
 
     client = genai.Client(
         api_key=api_key,
@@ -146,7 +151,7 @@ def compare_documents(text_a: str, text_b: str) -> DocumentComparison:
         )
 
         if not response.text:
-            raise ValueError("Gemini returned an empty response.")
+            raise AIServiceError("Gemini returned an empty response.")
 
         return DocumentComparison.model_validate_json(response.text)
 

@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from uuid import uuid4
 from contextlib import asynccontextmanager
@@ -34,6 +35,12 @@ app = FastAPI(lifespan=lifespan,
     description="AI-powered document intelligence system",
     version="1.0.0"
 )
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s"
+)
+logger = logging.getLogger("documind")
 
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
@@ -96,6 +103,7 @@ async def analyze_uploaded_document(
         raise HTTPException(status_code=400, detail=str(error))
 
     except Exception:
+        logger.exception("Document analysis failed")
         raise HTTPException(
             status_code=500,
             detail="Document analysis failed. Please try again."
@@ -173,6 +181,7 @@ def chat_with_document(
         raise HTTPException(status_code=400, detail=str(error))
 
     except Exception:
+        logger.exception("Chat answer failed")
         raise HTTPException(
             status_code=500,
             detail="Could not answer the question. Please try again."
@@ -234,6 +243,7 @@ async def compare_uploaded_documents(
         raise HTTPException(status_code=400, detail=str(error))
 
     except Exception:
+        logger.exception("Document comparison failed")
         raise HTTPException(
             status_code=500,
             detail="Document comparison failed. Please try again."
