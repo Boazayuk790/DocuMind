@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from pydantic import BaseModel, Field
 
-from app.services.document_reader import extract_text
+from app.services.document_reader import extract_text, validate_content
 from app.services.llm_service import analyze_document, answer_question, compare_documents
 from app.schemas import DocumentAnalysis, DocumentComparison
 from app.auth import create_token, get_current_user
@@ -74,6 +74,11 @@ async def analyze_uploaded_document(
             status_code=413,
             detail="File exceeds the 10MB limit."
         )
+
+    try:
+        validate_content(extension, content)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
 
     file_path = UPLOAD_DIR / f"{uuid4().hex}{extension}"
 
@@ -194,6 +199,11 @@ async def read_and_extract(file: UploadFile) -> str:
             status_code=413,
             detail=f"{filename}: file exceeds the 10MB limit."
         )
+
+    try:
+        validate_content(extension, content)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=f"{filename}: {error}")
 
     file_path = UPLOAD_DIR / f"{uuid4().hex}{extension}"
 
