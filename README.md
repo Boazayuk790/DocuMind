@@ -12,6 +12,24 @@ AI-powered document intelligence. Upload a PDF, DOCX or TXT file and DocuMind us
 - Chat with a previously analysed document
 - Compare two documents (similarities, differences, conflicting dates, amounts and information)
 
+## Screenshots
+
+**Login and registration**
+
+![Login screen](docs/login.png)
+
+**Document analysis**
+
+![Analysis result](docs/analysis.png)
+
+**Chat with a document**
+
+![Chat with a document](docs/chat.png)
+
+**Compare two documents**
+
+![Document comparison](docs/compare.png)
+
 ## Tech stack
 
 - Backend: FastAPI, Pydantic, SQLite
