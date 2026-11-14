@@ -7,7 +7,7 @@ from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 
 load_dotenv()
 
-TOKEN_MAX_AGE_SECONDS = 7 * 24 * 60 * 60
+TOKEN_MAX_AGE_SECONDS = 24 * 60 * 60
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
