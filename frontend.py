@@ -13,6 +13,118 @@ st.set_page_config(
 API_URL = "http://127.0.0.1:8000"
 
 
+def auth_headers():
+    return {"Authorization": f"Bearer {st.session_state['token']}"}
+
+
+def end_session(message):
+    st.session_state.clear()
+    st.session_state["auth_message"] = message
+    st.rerun()
+
+
+def authed_request(method, url, **kwargs):
+    headers = kwargs.pop("headers", {})
+    headers.update(auth_headers())
+    response = requests.request(method, url, headers=headers, **kwargs)
+    if response.status_code == 401:
+        end_session("Your session expired. Please log in again.")
+    return response
+
+
+def authed_get(url, **kwargs):
+    return authed_request("GET", url, **kwargs)
+
+
+def authed_post(url, **kwargs):
+    return authed_request("POST", url, **kwargs)
+
+
+def authed_delete(url, **kwargs):
+    return authed_request("DELETE", url, **kwargs)
+
+
+def submit_credentials(action, username, password):
+    try:
+        response = requests.post(
+            f"{API_URL}/{action}",
+            json={"username": username, "password": password},
+            timeout=30
+        )
+    except requests.exceptions.RequestException as error:
+        st.error(f"Could not connect to DocuMind API: {error}")
+        return
+
+    if response.status_code == 200:
+        st.session_state["token"] = response.json()["token"]
+        st.rerun()
+    elif response.status_code == 422:
+        st.error(
+            "Username must be 3-50 characters and "
+            "password 8-128 characters."
+        )
+    else:
+        st.error(response.json().get("detail", "Request failed."))
+
+
+def show_login_screen():
+    st.title("DocuMind")
+    st.subheader("AI-Powered Document Intelligence")
+
+    message = st.session_state.pop("auth_message", None)
+    if message:
+        st.warning(message)
+
+    login_tab, register_tab = st.tabs(["Login", "Register"])
+
+    with login_tab:
+        with st.form("login_form"):
+            username = st.text_input("Username", key="login_username")
+            password = st.text_input(
+                "Password", type="password", key="login_password"
+            )
+            submitted = st.form_submit_button("Log in")
+        if submitted:
+            submit_credentials("login", username, password)
+
+    with register_tab:
+        with st.form("register_form"):
+            username = st.text_input(
+                "Username (3-50 characters)", key="register_username"
+            )
+            password = st.text_input(
+                "Password (8-128 characters)",
+                type="password",
+                key="register_password"
+            )
+            submitted = st.form_submit_button("Create account")
+        if submitted:
+            submit_credentials("register", username, password)
+
+
+if "token" not in st.session_state:
+    show_login_screen()
+    st.stop()
+
+if "username" not in st.session_state:
+    try:
+        me_response = requests.get(
+            f"{API_URL}/me", headers=auth_headers(), timeout=30
+        )
+    except requests.exceptions.RequestException as error:
+        st.error(f"Could not connect to DocuMind API: {error}")
+        st.stop()
+    if me_response.status_code != 200:
+        end_session("Your session expired. Please log in again.")
+    st.session_state["username"] = me_response.json()["username"]
+
+with st.sidebar:
+    st.write(f"Logged in as **{st.session_state['username']}**")
+    if st.button("Log out"):
+        st.session_state.clear()
+        st.rerun()
+
+
 
 def build_docx(result):
     from docx import Document
@@ -205,7 +317,7 @@ if uploaded_file:
         with st.spinner("Analyzing your document with AI..."):
 
             try:
-                response = requests.post(
+                response = authed_post(
                     f"{API_URL}/analyze",
                     files={
                         "file": (
@@ -237,7 +349,7 @@ st.header("Analysis History")
 
 def load_history():
     try:
-        response = requests.get(f"{API_URL}/history", timeout=30)
+        response = authed_get(f"{API_URL}/history", timeout=30)
         if response.status_code == 200:
             return response.json()
         st.error("Could not load analysis history.")
@@ -248,7 +360,7 @@ def load_history():
 
 def delete_record(record_id):
     try:
-        response = requests.delete(
+        response = authed_delete(
             f"{API_URL}/history/{record_id}", timeout=30
         )
         if response.status_code == 200:
@@ -383,7 +495,7 @@ else:
                 with st.chat_message("assistant"):
                     with st.spinner("Thinking..."):
                         try:
-                            chat_response = requests.post(
+                            chat_response = authed_post(
                                 f"{API_URL}/chat",
                                 json={
                                     "analysis_id": selected["id"],
@@ -422,7 +534,7 @@ if file_a and file_b:
     if st.button("Compare Documents", type="primary"):
         with st.spinner("Comparing your documents with AI..."):
             try:
-                compare_response = requests.post(
+                compare_response = authed_post(
                     f"{API_URL}/compare",
                     files={
                         "file_a": (file_a.name, file_a.getvalue(), file_a.type),
