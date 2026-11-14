@@ -1,4 +1,4 @@
-import logging
+﻿import logging
 from pathlib import Path
 from uuid import uuid4
 from contextlib import asynccontextmanager
@@ -10,7 +10,7 @@ from app.services.document_reader import extract_text, validate_content
 from app.services.llm_service import analyze_document, answer_question, compare_documents
 from app.schemas import DocumentAnalysis, DocumentComparison
 from app.auth import create_token, get_current_user
-from app.rate_limit import rate_limit
+from app.rate_limit import rate_limit, user_rate_limit
 from app.database import (
     initialize_database,
     save_analysis,
@@ -59,7 +59,8 @@ def home():
 @app.post("/analyze", response_model=DocumentAnalysis)
 async def analyze_uploaded_document(
     file: UploadFile = File(...),
-    user_id: int = Depends(get_current_user)
+    user_id: int = Depends(get_current_user),
+    _: None = Depends(user_rate_limit("analyze", 10, 60))
 ):
 
     original_filename = file.filename or "unknown"
@@ -158,7 +159,8 @@ class ChatRequest(BaseModel):
 @app.post("/chat")
 def chat_with_document(
     request: ChatRequest,
-    user_id: int = Depends(get_current_user)
+    user_id: int = Depends(get_current_user),
+    _: None = Depends(user_rate_limit("chat", 20, 60))
 ):
     record = get_analysis_by_id(request.analysis_id, user_id)
 
@@ -231,7 +233,8 @@ async def read_and_extract(file: UploadFile) -> str:
 async def compare_uploaded_documents(
     file_a: UploadFile = File(...),
     file_b: UploadFile = File(...),
-    user_id: int = Depends(get_current_user)
+    user_id: int = Depends(get_current_user),
+    _: None = Depends(user_rate_limit("compare", 5, 60))
 ):
     text_a = await read_and_extract(file_a)
     text_b = await read_and_extract(file_b)
