@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 DATABASE_PATH = Path(__file__).resolve().parent.parent / "documind.db"
 
 
-def initialize_database():
+def _initialize_analyses_table():
     with sqlite3.connect(DATABASE_PATH) as connection:
         connection.execute("""
             CREATE TABLE IF NOT EXISTS document_analyses (
@@ -111,3 +111,64 @@ def delete_analysis(analysis_id):
         """, (analysis_id,))
 
         return cursor.rowcount > 0
+
+
+import hashlib
+import hmac
+import os
+
+
+def initialize_database():
+    _initialize_analyses_table()
+
+    with sqlite3.connect(DATABASE_PATH) as connection:
+        connection.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )
+        """)
+
+
+def _hash_password(password, salt):
+    return hashlib.scrypt(
+        password.encode("utf-8"), salt=salt, n=2**14, r=8, p=1
+    )
+
+
+def register_user(username, password):
+    username = username.strip().lower()
+    salt = os.urandom(16)
+    stored = salt.hex() + ":" + _hash_password(password, salt).hex()
+
+    try:
+        with sqlite3.connect(DATABASE_PATH) as connection:
+            cursor = connection.execute("""
+                INSERT INTO users (username, password_hash, created_at)
+                VALUES (?, ?, ?)
+            """, (username, stored, datetime.now(timezone.utc).isoformat()))
+            return cursor.lastrowid
+    except sqlite3.IntegrityError:
+        return None
+
+
+def verify_user(username, password):
+    username = username.strip().lower()
+
+    with sqlite3.connect(DATABASE_PATH) as connection:
+        row = connection.execute("""
+            SELECT id, password_hash FROM users WHERE username = ?
+        """, (username,)).fetchone()
+
+    if row is None:
+        return None
+
+    salt_hex, hash_hex = row[1].split(":")
+    candidate = _hash_password(password, bytes.fromhex(salt_hex))
+
+    if hmac.compare_digest(candidate, bytes.fromhex(hash_hex)):
+        return row[0]
+
+    return None
