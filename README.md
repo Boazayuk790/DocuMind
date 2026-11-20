@@ -4,6 +4,8 @@
 
 **Live API docs:** https://documind-txiu.onrender.com/docs
 
+[![CI](https://github.com/Boazayuk790/DocuMind/actions/workflows/ci.yml/badge.svg)](https://github.com/Boazayuk790/DocuMind/actions/workflows/ci.yml)
+
 _Free hosting sleeps when idle, so the first load can take about a minute. Register a test account to try it._
 
 An AI-powered document intelligence app. Upload a PDF, DOCX or TXT file and Gemini turns it into structured results. You can then review your history, export reports, chat with a document, or compare two documents. Accounts are private.
